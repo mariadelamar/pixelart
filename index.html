@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Art Editor</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #000000;
+            font-family: Arial, sans-serif;
+        }
+        
+        .controls {
+            margin: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: crosshair;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #colorPicker {
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+
+        select {
+            padding: 8px;
+            margin: 0 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <input type="color" id="colorPicker" value="#000000">
+        <select id="gridSize">
+            <option value="8">8 x 8</option>
+            <option value="16" selected>16 x 16</option>
+            <option value="32">32 x 32</option>
+        </select>
+        <button id="clear">Clear</button>
+        <button id="save">Save</button>
+    </div>
+    <canvas id="canvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const gridSizeSelect = document.getElementById('gridSize');
+        const clearButton = document.getElementById('clear');
+        const saveButton = document.getElementById('save');
+
+        let gridSize = parseInt(gridSizeSelect.value);
+        let pixelSize = canvas.width / gridSize;
+        let isDrawing = false;
+        let grid = Array(gridSize).fill().map(() => Array(gridSize).fill('#FFFFFF'));
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw pixels
+            for(let row = 0; row < gridSize; row++) {
+                for(let col = 0; col < gridSize; col++) {
+                    ctx.fillStyle = grid[row][col];
+                    ctx.fillRect(
+                        col * pixelSize,
+                        row * pixelSize,
+                        pixelSize,
+                        pixelSize
+                    );
+                }
+            }
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            
+            for(let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * pixelSize, 0);
+                ctx.lineTo(i * pixelSize, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * pixelSize);
+                ctx.lineTo(canvas.width, i * pixelSize);
+                ctx.stroke();
+            }
+        }
+
+        function getGridPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            return {
+                row: Math.floor(y / pixelSize),
+                col: Math.floor(x / pixelSize)
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const {row, col} = getGridPosition(e);
+            if(row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
+                grid[row][col] = colorPicker.value;
+                drawGrid();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if(!isDrawing) return;
+            const {row, col} = getGridPosition(e);
+            if(row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
+                grid[row][col] = colorPicker.value;
+                drawGrid();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        clearButton.addEventListener('click', () => {
+            grid = Array(gridSize).fill().map(() => Array(gridSize).fill('#FFFFFF'));
+            drawGrid();
+        });
+
+        saveButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'pixel-art.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        gridSizeSelect.addEventListener('change', (e) => {
+            gridSize = parseInt(e.target.value);
+            pixelSize = canvas.width / gridSize;
+            grid = Array(gridSize).fill().map(() => Array(gridSize).fill('#FFFFFF'));
+            drawGrid();
+        });
+
+        // Initial draw
+        drawGrid();
+    </script>
+</body>
+</html>
